@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -80,8 +81,12 @@ fun DashboardPetugasScreen(navController: NavController) {
         db.collection("riwayat_screening").get()
             .addOnSuccessListener { snaps ->
                 val fetchedList = snaps.documents.map { doc ->
-                    val rawStatus = doc.getString("status") ?: "Menunggu Validasi Dokter"
-                    val displayValidasi = if (rawStatus.contains("Menunggu", ignoreCase = true)) "Belum" else "Sudah"
+                    val hasilValidasi = doc.getString("hasil_validasi_dokter")
+                    val displayValidasi = if (hasilValidasi.isNullOrEmpty()) "Belum" else "Sudah"
+
+                    // 👉 LOGIKA BARU: Timpa hasil AI dengan hasil Dokter kalau dokternya udah ngisi
+                    val hasilAi = doc.getString("hasil_ai") ?: "Kondisi mental normal"
+                    val kondisiFinal = if (hasilValidasi.isNullOrEmpty()) hasilAi else hasilValidasi
 
                     val tgl = doc.getString("tanggal_screening") ?: "-"
                     val jam = doc.getString("jam_screening") ?: "00.00"
@@ -90,7 +95,7 @@ fun DashboardPetugasScreen(navController: NavController) {
                     RiwayatPasien(
                         id = doc.id,
                         nama = doc.getString("nama_pasien") ?: "-",
-                        kondisi = doc.getString("hasil_ai") ?: "Kondisi mental normal",
+                        kondisi = kondisiFinal, // Pake variabel logika baru
                         waktu = displayTime,
                         validasi = displayValidasi
                     )
@@ -98,7 +103,7 @@ fun DashboardPetugasScreen(navController: NavController) {
                 listPasien = fetchedList
                 totalPasien = fetchedList.size
 
-                val todayStr = SimpleDateFormat("dd/MM/yy", Locale.getDefault()).format(Date())
+                val todayStr = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
                 pasienHariIni = fetchedList.count { it.waktu.contains(todayStr) }
 
                 resikoTinggi = fetchedList.count { it.kondisi.equals("Distres Psikologis Tinggi", ignoreCase = true) }
@@ -191,7 +196,6 @@ fun DashboardPetugasScreen(navController: NavController) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // 👉 REVISI HEADER TABEL: Margin Kanan-Kiri dipangkas jadi 8.dp biar lega
                     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp).height(IntrinsicSize.Min)) {
                         Text("Nama Pasien", modifier = Modifier.weight(1.1f).padding(vertical = 8.dp, horizontal = 2.dp), fontSize = 9.sp, fontWeight = FontWeight.SemiBold, color = Color.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         VerticalDivider(color = Color(0xFFE5E7EB))
@@ -205,16 +209,21 @@ fun DashboardPetugasScreen(navController: NavController) {
                 }
 
                 items(listPasien.filter { it.nama.contains(searchQuery, true) || it.kondisi.contains(searchQuery, true) }) { pasien ->
-                    // 👉 REVISI ISI TABEL: Font dikecilin ke 8.sp, Margin dikurangin
-                    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp).height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { navController.navigate("detail_pasien_petugas/${pasien.id}") }
+                            .padding(horizontal = 8.dp)
+                            .height(IntrinsicSize.Min),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(pasien.nama, modifier = Modifier.weight(1.1f).padding(vertical = 10.dp, horizontal = 2.dp), fontSize = 8.sp, color = Color(0xFF4B5563), maxLines = 1, overflow = TextOverflow.Ellipsis)
                         VerticalDivider(color = Color(0xFFE5E7EB))
 
-                        val kondisiColor = when (pasien.kondisi) {
-                            "Kondisi mental normal" -> Color(0xFF10B981)
-                            "Risiko ringan hingga sedang" -> Color(0xFFFBBF24)
-                            "Distres Psikologis Tinggi" -> Color(0xFFEF4444)
-                            else -> Color(0xFF4B5563)
+                        val kondisiColor = when {
+                            pasien.kondisi.contains("normal", ignoreCase = true) -> Color(0xFF10B981)
+                            pasien.kondisi.contains("tinggi", ignoreCase = true) -> Color(0xFFEF4444)
+                            else -> Color(0xFFFBBF24)
                         }
                         Text(pasien.kondisi, modifier = Modifier.weight(1.5f).padding(vertical = 10.dp, horizontal = 2.dp), fontSize = 8.sp, fontWeight = FontWeight.Medium, color = kondisiColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         VerticalDivider(color = Color(0xFFE5E7EB))
