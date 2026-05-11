@@ -42,7 +42,7 @@ fun LoginDokterScreen(navController: NavController, kodeRs: String) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(60.dp))
-        Image(painter = painterResource(id = R.drawable.logo), contentDescription = null, modifier = Modifier.size(100.dp))
+        Image(painter = painterResource(id = R.drawable.logo), contentDescription = null, modifier = Modifier.size(150.dp))
         Spacer(modifier = Modifier.height(40.dp))
         Column(modifier = Modifier.fillMaxWidth()) {
             Text("Selamat Datang kembali", fontSize = 24.sp, fontWeight = FontWeight.Normal, color = Color.Black)
@@ -102,8 +102,8 @@ fun LoginDokterScreen(navController: NavController, kodeRs: String) {
                             val emailLogin = "${idUser.value}@${kodeRs.lowercase()}.com"
                             auth.signInWithEmailAndPassword(emailLogin, password.value).addOnSuccessListener {
                                 isLoading.value = false
-                                // TODO: Navigate to dashboard_dokter (nanti dibikin)
-                                Toast.makeText(context, "Login Dokter Berhasil", Toast.LENGTH_SHORT).show()
+                                // 👉 FIX: LANGSUNG TERBANG KE DASHBOARD DOKTER
+                                navController.navigate("dashboard_dokter") { popUpTo(0) }
                             }.addOnFailureListener {
                                 isLoading.value = false
                                 Toast.makeText(context, "Password Salah!", Toast.LENGTH_SHORT).show()

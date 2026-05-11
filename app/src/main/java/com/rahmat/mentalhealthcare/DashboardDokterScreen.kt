@@ -1,7 +1,6 @@
 package com.rahmat.mentalhealthcare
 
 import android.app.Activity
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,25 +35,16 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// DATA CLASS WAJIB DI SINI
-data class RiwayatPasien(
-    val id: String = "",
-    val nama: String = "-",
-    val kondisiTampil: String = "-",
-    val waktu: String = "-",
-    val validasi: String = "Belum"
-)
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
-fun DashboardPetugasScreen(navController: NavController) {
+fun DashboardDokterScreen(navController: NavController) {
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
 
     BackHandler { (context as? Activity)?.finish() }
 
-    val namaPetugas = remember { mutableStateOf("Memuat...") }
+    val namaDokter = remember { mutableStateOf("Memuat...") }
     val listPasien = remember { mutableStateOf<List<RiwayatPasien>>(emptyList()) }
     val totalPasien = remember { mutableStateOf(0) }
     val pasienHariIni = remember { mutableStateOf(0) }
@@ -65,15 +55,14 @@ fun DashboardPetugasScreen(navController: NavController) {
 
     fun fetchData() {
         isRefreshing.value = true
-        val email = auth.currentUser?.email ?: ""
-        val idLogin = email.substringBefore("@")
+        val idLogin = auth.currentUser?.email?.substringBefore("@") ?: ""
 
         if (idLogin.isNotEmpty()) {
             db.collection("users").whereEqualTo("id_login", idLogin).get()
                 .addOnSuccessListener { snaps ->
                     if (!snaps.isEmpty) {
                         val doc = snaps.documents[0]
-                        namaPetugas.value = doc.getString("nama") ?: "Petugas Medis"
+                        namaDokter.value = doc.getString("nama") ?: "Dokter"
                         val kodeRs = doc.getString("kode_rs") ?: ""
 
                         if (kodeRs.isNotEmpty()) {
@@ -92,7 +81,7 @@ fun DashboardPetugasScreen(navController: NavController) {
                                             id = rDoc.id,
                                             nama = rDoc.getString("nama_pasien") ?: "-",
                                             kondisiTampil = kondisiFinal,
-                                            waktu = "$jam WIB\n$tgl",
+                                            waktu = "$jam WIB\n$tgl", // Dibuat enter biar rapi di tabel
                                             validasi = statusValidasi
                                         )
                                     }
@@ -125,7 +114,7 @@ fun DashboardPetugasScreen(navController: NavController) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Halo, ${namaPetugas.value}",
+                            text = "Halo, ${namaDokter.value}",
                             fontSize = 18.sp,
                             lineHeight = 24.sp,
                             fontWeight = FontWeight.Bold,
@@ -205,7 +194,7 @@ fun DashboardPetugasScreen(navController: NavController) {
 
                 items(listPasien.value.filter { it.nama.contains(searchQuery.value, true) || it.kondisiTampil.contains(searchQuery.value, true) }) { pasien ->
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { navController.navigate("detail_pasien_petugas/${pasien.id}") }.padding(horizontal = 16.dp).height(IntrinsicSize.Min),
+                        modifier = Modifier.fillMaxWidth().clickable { navController.navigate("detail_pasien_dokter/${pasien.id}") }.padding(horizontal = 16.dp).height(IntrinsicSize.Min),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // 👉 LOGIKA > 5 KATA DIPOTONG

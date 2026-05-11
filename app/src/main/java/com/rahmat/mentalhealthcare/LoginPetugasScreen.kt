@@ -42,7 +42,7 @@ fun LoginPetugasScreen(navController: NavController, kodeRs: String) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(60.dp))
-        Image(painter = painterResource(id = R.drawable.logo), contentDescription = null, modifier = Modifier.size(100.dp))
+        Image(painter = painterResource(id = R.drawable.logo), contentDescription = null, modifier = Modifier.size(150.dp))
         Spacer(modifier = Modifier.height(40.dp))
         Column(modifier = Modifier.fillMaxWidth()) {
             Text("Selamat Datang kembali", fontSize = 24.sp, fontWeight = FontWeight.Normal, color = Color.Black)

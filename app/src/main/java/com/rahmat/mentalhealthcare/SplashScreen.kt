@@ -28,10 +28,11 @@ fun SplashScreen(navController: NavController) {
 
         val user = auth.currentUser
         if (user != null) {
-            // LOGIKA AUTO LOGIN
+            // LOGIKA AUTO LOGIN SEMUA ROLE KESIMPEN
             val email = user.email ?: ""
             val idLogin = email.substringBefore("@")
 
+            // 1. Cek dulu apakah dia Dokter atau Petugas Medis (di koleksi users)
             db.collection("users").whereEqualTo("id_login", idLogin).get()
                 .addOnSuccessListener { snaps ->
                     if (!snaps.isEmpty) {
@@ -42,7 +43,11 @@ fun SplashScreen(navController: NavController) {
                                     popUpTo("splash") { inclusive = true }
                                 }
                             }
-                            // Nanti buat dokter & pasien ditambah di sini
+                            "dokter" -> {
+                                navController.navigate("dashboard_dokter") {
+                                    popUpTo("splash") { inclusive = true }
+                                }
+                            }
                             else -> {
                                 auth.signOut()
                                 navController.navigate("hospital_selection") {
@@ -51,14 +56,32 @@ fun SplashScreen(navController: NavController) {
                             }
                         }
                     } else {
-                        auth.signOut()
-                        navController.navigate("hospital_selection") {
-                            popUpTo("splash") { inclusive = true }
-                        }
+                        // 2. Kalau di users gak ketemu, cek apakah dia Pasien (di koleksi data_pasien)
+                        db.collection("data_pasien").whereEqualTo("nik", idLogin).get()
+                            .addOnSuccessListener { pSnaps ->
+                                if (!pSnaps.isEmpty) {
+                                    // Arahkan ke dashboard pasien
+                                    navController.navigate("dashboard_pasien") {
+                                        popUpTo("splash") { inclusive = true }
+                                    }
+                                } else {
+                                    // Bener-bener gak terdaftar di mana pun
+                                    auth.signOut()
+                                    navController.navigate("hospital_selection") {
+                                        popUpTo("splash") { inclusive = true }
+                                    }
+                                }
+                            }
+                            .addOnFailureListener {
+                                auth.signOut()
+                                navController.navigate("hospital_selection") {
+                                    popUpTo("splash") { inclusive = true }
+                                }
+                            }
                     }
                 }
                 .addOnFailureListener {
-                    // Kalau gagal konek ke Firebase, amanin lempar ke depan
+                    // Kalau gagal konek ke Firebase, lempar ke depan
                     navController.navigate("hospital_selection") {
                         popUpTo("splash") { inclusive = true }
                     }
@@ -83,16 +106,16 @@ fun SplashScreen(navController: NavController) {
         Image(
             painter = painterResource(id = R.drawable.logo),
             contentDescription = "Mental Health Care Logo",
-            modifier = Modifier.size(160.dp) // Ukuran besar disamakan dengan proporsi Figma
+            modifier = Modifier.size(160.dp)
         )
 
-        Spacer(modifier = Modifier.height(48.dp)) // Jarak agak jauh dari logo ke teks
+        Spacer(modifier = Modifier.height(48.dp))
 
         // Judul
         Text(
             text = "Mental Health Care",
-            fontSize = 28.sp, // Font besar
-            fontWeight = FontWeight.Normal, // Sesuai gambar, font tidak terlalu bold
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Normal,
             color = Color.Black
         )
 
@@ -101,7 +124,7 @@ fun SplashScreen(navController: NavController) {
         // Subjudul
         Text(
             text = "Sistem Pendukung Keputusan untuk Kesehatan Mental Anda",
-            fontSize = 13.sp, // Font kecil
+            fontSize = 13.sp,
             fontWeight = FontWeight.Normal,
             color = Color.Black
         )

@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,236 +20,178 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.google.firebase.firestore.FirebaseFirestore
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailPasienPetugasScreen(navController: NavController, riwayatId: String) {
     val context = LocalContext.current
     val db = FirebaseFirestore.getInstance()
     val scrollState = rememberScrollState()
 
-    var isLoading by remember { mutableStateOf(true) }
-    var isSaving by remember { mutableStateOf(false) }
+    val isLoading = remember { mutableStateOf(true) }
+    val namaPasien = remember { mutableStateOf("-") }
+    val kondisiTampil = remember { mutableStateOf("-") }
+    val statusValidasi = remember { mutableStateOf("") }
+    val catatanRs = remember { mutableStateOf("") }
 
-    // State Data Gabungan
-    var namaPasien by remember { mutableStateOf("-") }
-    var kondisiTampil by remember { mutableStateOf("-") }
-    var statusValidasi by remember { mutableStateOf("-") }
-    var catatanRs by remember { mutableStateOf("") }
+    val pNik = remember { mutableStateOf("-") }
+    val pJk = remember { mutableStateOf("-") }
+    val pTglLahir = remember { mutableStateOf("-") }
+    val pUsia = remember { mutableStateOf("-") }
+    val pNoHp = remember { mutableStateOf("-") }
+    val pAlamat = remember { mutableStateOf("-") }
 
-    // State Profil (Dari koleksi data_pasien)
-    var pNik by remember { mutableStateOf("-") }
-    var pJk by remember { mutableStateOf("-") }
-    var pTglLahir by remember { mutableStateOf("-") }
-    var pUsia by remember { mutableStateOf("-") }
-    var pNoHp by remember { mutableStateOf("-") }
-    var pAlamat by remember { mutableStateOf("-") }
-
-    var pjNama by remember { mutableStateOf("-") }
-    var pjJk by remember { mutableStateOf("-") }
-    var pjUsia by remember { mutableStateOf("-") }
-    var pjNoHp by remember { mutableStateOf("-") }
-    var pjAlamat by remember { mutableStateOf("-") }
+    val pjNama = remember { mutableStateOf("-") }
+    val pjJk = remember { mutableStateOf("-") }
+    val pjUsia = remember { mutableStateOf("-") }
+    val pjNoHp = remember { mutableStateOf("-") }
+    val pjAlamat = remember { mutableStateOf("-") }
 
     LaunchedEffect(riwayatId) {
-        db.collection("riwayat_screening").document(riwayatId).get()
-            .addOnSuccessListener { rDoc ->
-                if (rDoc.exists()) {
-                    namaPasien = rDoc.getString("nama_pasien") ?: "-"
+        db.collection("riwayat_screening").document(riwayatId).get().addOnSuccessListener { rDoc ->
+            if (rDoc.exists()) {
+                namaPasien.value = rDoc.getString("nama_pasien") ?: "-"
+                val ai = rDoc.getString("hasil_ai") ?: ""
+                val dr = rDoc.getString("hasil_validasi_dokter") ?: ""
 
-                    // 👉 LOGIKA PENENTUAN KONDISI (PRIORITAS DOKTER)
-                    val hasilAi = rDoc.getString("hasil_ai") ?: "Belum ada hasil"
-                    val validasiDokter = rDoc.getString("hasil_validasi_dokter")
+                kondisiTampil.value = if (dr.isNotEmpty()) dr else ai
+                statusValidasi.value = if (dr.isNotEmpty()) "(Sudah Validasi Dokter)" else "(Belum Validasi Dokter)"
+                catatanRs.value = rDoc.getString("catatan_rs") ?: ""
 
-                    kondisiTampil = if (!validasiDokter.isNullOrEmpty()) validasiDokter else hasilAi
-                    statusValidasi = if (validasiDokter.isNullOrEmpty()) "(Belum Validasi Dokter)" else "(Sudah Validasi Dokter)"
+                val idPasien = rDoc.getString("id_pasien") ?: ""
+                if (idPasien.isNotEmpty()) {
+                    db.collection("data_pasien").document(idPasien).get().addOnSuccessListener { pDoc ->
+                        if (pDoc.exists()) {
+                            pNik.value = pDoc.getString("nik") ?: "-"
+                            pJk.value = pDoc.getString("jenis_kelamin") ?: "-"
+                            pTglLahir.value = pDoc.getString("tanggal_lahir") ?: "-"
+                            pUsia.value = pDoc.get("usia")?.toString() ?: "-"
+                            pNoHp.value = pDoc.getString("no_hp") ?: "-"
+                            pAlamat.value = pDoc.getString("alamat") ?: "-"
 
-                    catatanRs = rDoc.getString("catatan_rs") ?: ""
-                    val idPasien = rDoc.getString("id_pasien") ?: ""
-
-                    if (idPasien.isNotEmpty()) {
-                        db.collection("data_pasien").document(idPasien).get()
-                            .addOnSuccessListener { pDoc ->
-                                if (pDoc.exists()) {
-                                    pNik = pDoc.getString("nik") ?: "-"
-                                    pJk = pDoc.getString("jenis_kelamin") ?: "-"
-                                    pTglLahir = pDoc.getString("tanggal_lahir") ?: "-"
-                                    pUsia = pDoc.getString("usia")?.toString() ?: "-"
-                                    pNoHp = pDoc.getString("no_hp") ?: "-"
-                                    pAlamat = pDoc.getString("alamat") ?: "-"
-
-                                    pjNama = pDoc.getString("pj_nama") ?: "-"
-                                    pjJk = pDoc.getString("pj_jenis_kelamin") ?: "-"
-                                    pjUsia = pDoc.getString("pj_usia")?.toString() ?: "-"
-                                    pjNoHp = pDoc.getString("pj_no_hp") ?: "-"
-                                    pjAlamat = pDoc.getString("pj_alamat") ?: "-"
-                                }
-                                isLoading = false
-                            }
-                    } else {
-                        isLoading = false
+                            pjNama.value = pDoc.getString("pj_nama") ?: "-"
+                            pjJk.value = pDoc.getString("pj_jenis_kelamin") ?: "-"
+                            pjUsia.value = pDoc.get("pj_usia")?.toString() ?: "-"
+                            pjNoHp.value = pDoc.getString("pj_no_hp") ?: "-"
+                            pjAlamat.value = pDoc.getString("pj_alamat") ?: "-"
+                        }
+                        isLoading.value = false
                     }
                 }
             }
+        }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("", fontSize = 16.sp) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Kembali", tint = Color.Black)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
-        },
-        containerColor = Color.White
-    ) { innerPadding ->
-        if (isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Color(0xFF0D8ABC))
-            }
+    Scaffold(containerColor = Color.White) { padding ->
+        if (isLoading.value) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
         } else {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(padding)
                     .verticalScroll(scrollState)
-                    .padding(innerPadding)
                     .padding(horizontal = 24.dp)
             ) {
-                // Kartu Header Gradient
-                val gradientBrush = Brush.verticalGradient(listOf(Color(0xFFC7F0FD), Color.White))
-                val kondisiColor = if (kondisiTampil.contains("Tinggi", true) || kondisiTampil.contains("Berat", true)) Color(0xFFE53935) else if(kondisiTampil.contains("normal", true)) Color(0xFF4CAF50) else Color(0xFFF59E0B)
+                Spacer(modifier = Modifier.height(32.dp))
 
+                val gradient = Brush.verticalGradient(listOf(Color(0xFFC7F0FD), Color.White))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     border = BorderStroke(1.dp, Color.Black),
                     elevation = CardDefaults.cardElevation(0.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(gradientBrush)
-                            .padding(20.dp)
-                    ) {
-                        Text(text = namaPasien, fontSize = 16.sp, color = Color.Black)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = kondisiTampil, fontSize = 22.sp, fontWeight = FontWeight.Medium, color = kondisiColor)
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(text = statusValidasi, fontSize = 12.sp, color = Color.DarkGray)
+                    // 👉 FIX: Tambah fillMaxWidth() biar background gradient menuhin satu layar HP
+                    Column(Modifier.fillMaxWidth().background(gradient).padding(20.dp)) {
+                        Text(namaPasien.value, fontSize = 16.sp, color = Color.Black)
+                        Spacer(Modifier.height(4.dp))
+                        Text(kondisiTampil.value, fontSize = 22.sp, fontWeight = FontWeight.Medium, color = if(kondisiTampil.value.contains("Tinggi")) Color.Red else Color(0xFF0D8ABC))
+                        Text(statusValidasi.value, fontSize = 12.sp, color = Color.Gray)
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(Modifier.height(24.dp))
+                SectionHeader("Identitas Pasien")
+                DataRow("Nomor Induk Kependudukan", pNik.value)
+                DataRow("Jenis Kelamin", pJk.value)
+                DataRow("Tanggal Lahir", pTglLahir.value)
+                DataRow("Usia", pUsia.value)
 
-                // Identitas Pasien
-                Text("Identitas Pasien", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                Spacer(modifier = Modifier.height(8.dp))
-                DetailRow("Nomor Induk Kependudukan", pNik)
-                DetailRow("Jenis Kelamin", pJk)
-                DetailRow("Tanggal Lahir", pTglLahir)
-                DetailRow("Usia", pUsia)
+                Spacer(Modifier.height(16.dp))
+                SectionHeader("Kontak Pasien")
+                DataRow("No.Telepon/WhatsApp", pNoHp.value)
+                DataRow("Alamat Domisili", pAlamat.value)
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(Modifier.height(16.dp))
+                SectionHeader("Identitas Penanggung Jawab Pasien")
+                DataRow("Nama Lengkap", pjNama.value)
+                DataRow("Jenis Kelamin", pjJk.value)
+                DataRow("Usia", pjUsia.value)
 
-                // Kontak Pasien
-                Text("Kontak Pasien", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                Spacer(modifier = Modifier.height(8.dp))
-                DetailRow("No.Telepon/WhatsApp", pNoHp)
-                DetailRow("Alamat Domisili", pAlamat)
+                Spacer(Modifier.height(16.dp))
+                SectionHeader("Kontak Penanggung Jawab Pasien")
+                DataRow("No.Telepon/WhatsApp", pjNoHp.value)
+                DataRow("Alamat Domisili", pjAlamat.value)
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(Modifier.height(24.dp))
 
-                // Identitas Penanggung Jawab Pasien
-                Text("Identitas Penanggung Jawab Pasien", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                Spacer(modifier = Modifier.height(8.dp))
-                DetailRow("Nama Lengkap", pjNama)
-                DetailRow("Jenis Kelamin", pjJk)
-                DetailRow("Usia", pjUsia)
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Kontak Penanggung Jawab Pasien
-                Text("Kontak Penanggung Jawab Pasien", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                Spacer(modifier = Modifier.height(8.dp))
-                DetailRow("No.Telepon/WhatsApp", pjNoHp)
-                DetailRow("Alamat Domisili", pjAlamat)
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Input Catatan RS
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     border = BorderStroke(1.dp, Color.Black),
                     elevation = CardDefaults.cardElevation(0.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(gradientBrush)
-                            .padding(16.dp)
-                    ) {
-                        Text("Catatan untuk Pasien :", fontSize = 14.sp, color = Color.Black)
-                        Spacer(modifier = Modifier.height(8.dp))
+                    // 👉 FIX: Disini juga ditambahin fillMaxWidth()
+                    Column(Modifier.fillMaxWidth().background(gradient).padding(16.dp)) {
+                        Text("Catatan untuk Pasien :", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Spacer(Modifier.height(8.dp))
                         TextField(
-                            value = catatanRs,
-                            onValueChange = { catatanRs = it },
-                            placeholder = { Text("Berikan Catatan Disini....", fontSize = 12.sp, color = Color.Gray) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(100.dp),
-                            shape = RoundedCornerShape(8.dp),
+                            value = catatanRs.value,
+                            onValueChange = { catatanRs.value = it },
+                            placeholder = { Text("Berikan Catatan Disini....", fontSize = 12.sp) },
+                            modifier = Modifier.fillMaxWidth().height(100.dp),
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.White,
                                 unfocusedContainerColor = Color.White,
                                 focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                cursorColor = Color.Black
-                            )
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            shape = RoundedCornerShape(8.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Tombol Simpan
+                Spacer(Modifier.height(16.dp))
                 Button(
                     onClick = {
-                        isSaving = true
                         db.collection("riwayat_screening").document(riwayatId)
-                            .update("catatan_rs", catatanRs)
+                            .update("catatan_rs", catatanRs.value)
                             .addOnSuccessListener {
-                                isSaving = false
-                                Toast.makeText(context, "Catatan berhasil disimpan!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Berhasil simpan catatan!", Toast.LENGTH_SHORT).show()
                                 navController.navigateUp()
-                            }
-                            .addOnFailureListener {
-                                isSaving = false
-                                Toast.makeText(context, "Gagal menyimpan catatan", Toast.LENGTH_SHORT).show()
                             }
                     },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-                    enabled = !isSaving
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
                 ) {
-                    Text(if (isSaving) "Menyimpan..." else "Simpan", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Simpan", color = Color.White, fontWeight = FontWeight.Bold)
                 }
-
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(Modifier.height(40.dp))
             }
         }
     }
 }
 
 @Composable
-fun DetailRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Text(text = label, fontSize = 12.sp, modifier = Modifier.weight(1.2f), color = Color.Black)
-        Text(text = ":", fontSize = 12.sp, modifier = Modifier.padding(horizontal = 4.dp), color = Color.Black)
-        Text(text = value, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f), color = Color.Black)
+private fun SectionHeader(title: String) {
+    Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.Black, modifier = Modifier.padding(vertical = 4.dp))
+}
+
+@Composable
+private fun DataRow(label: String, value: String) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+        Text(label, Modifier.weight(1.2f), fontSize = 12.sp, color = Color.Black)
+        Text(":", Modifier.padding(horizontal = 4.dp), fontSize = 12.sp)
+        Text(value, Modifier.weight(1f), fontSize = 12.sp, color = Color.Black, fontWeight = FontWeight.Medium)
     }
 }
