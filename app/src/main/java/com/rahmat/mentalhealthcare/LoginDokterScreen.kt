@@ -28,7 +28,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginPetugasScreen(navController: NavController, kodeRs: String) {
+fun LoginDokterScreen(navController: NavController, kodeRs: String) {
     val idUser = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
     val passwordVisible = remember { mutableStateOf(false) }
@@ -51,7 +51,6 @@ fun LoginPetugasScreen(navController: NavController, kodeRs: String) {
         }
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Field ID
         TextField(
             value = idUser.value, onValueChange = { idUser.value = it },
             placeholder = { Text("ID User", color = Color.Gray) },
@@ -62,7 +61,6 @@ fun LoginPetugasScreen(navController: NavController, kodeRs: String) {
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Field Password
         TextField(
             value = password.value, onValueChange = { password.value = it },
             placeholder = { Text("Password", color = Color.Gray) },
@@ -83,11 +81,9 @@ fun LoginPetugasScreen(navController: NavController, kodeRs: String) {
                 if (idUser.value.isEmpty() || password.value.isEmpty()) return@Button
                 isLoading.value = true
 
-                // LOGIKA AUTHENTICATION PATEN
                 db.collection("users").whereEqualTo("id_login", idUser.value).get().addOnSuccessListener { snaps ->
                     if (snaps.isEmpty) {
-                        // Cek apakah dia Pasien nyasar
-                        db.collection("data_pasien").whereEqualTo("nik", idUser.value).get().addOnSuccessListener { pSnaps ->
+                        db.collection("data_pasien").whereEqualTo("nik", idUser.value).get().addOnSuccessListener {
                             isLoading.value = false
                             Toast.makeText(context, "Akun Tidak Terdaftar Pada Rumah Sakit Ini", Toast.LENGTH_LONG).show()
                         }
@@ -99,15 +95,15 @@ fun LoginPetugasScreen(navController: NavController, kodeRs: String) {
                         if (dbKodeRs != kodeRs) {
                             isLoading.value = false
                             Toast.makeText(context, "Akun Tidak Terdaftar Pada Rumah Sakit Ini", Toast.LENGTH_LONG).show() // Prioritas 1
-                        } else if (dbRole != "petugas_medis") {
+                        } else if (dbRole != "dokter") {
                             isLoading.value = false
-                            Toast.makeText(context, "ID Tidak Terdaftar Pada Role Ini", Toast.LENGTH_LONG).show() // Prioritas 2
+                            Toast.makeText(context, "ID Tidak Terdaftar Pada Role Ini", Toast.LENGTH_LONG).show() // Prioritas 2 (Role Dokter)
                         } else {
-                            // Lolos semua, sikat Firebase Auth!
                             val emailLogin = "${idUser.value}@${kodeRs.lowercase()}.com"
                             auth.signInWithEmailAndPassword(emailLogin, password.value).addOnSuccessListener {
                                 isLoading.value = false
-                                navController.navigate("dashboard_petugas") { popUpTo(0) }
+                                // TODO: Navigate to dashboard_dokter (nanti dibikin)
+                                Toast.makeText(context, "Login Dokter Berhasil", Toast.LENGTH_SHORT).show()
                             }.addOnFailureListener {
                                 isLoading.value = false
                                 Toast.makeText(context, "Password Salah!", Toast.LENGTH_SHORT).show()

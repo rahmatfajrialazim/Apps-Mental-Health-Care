@@ -17,7 +17,6 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // 👉 LANGSUNG MANGGIL FILE APP NAVIGATION LU
                     AppNavigation()
                 }
             }

@@ -3,6 +3,7 @@ package com.rahmat.mentalhealthcare
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,9 +18,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -28,7 +33,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginPetugasScreen(navController: NavController, kodeRs: String) {
+fun LoginPasienScreen(navController: NavController, kodeRs: String) {
     val idUser = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
     val passwordVisible = remember { mutableStateOf(false) }
@@ -47,14 +52,13 @@ fun LoginPetugasScreen(navController: NavController, kodeRs: String) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Text("Selamat Datang kembali", fontSize = 24.sp, fontWeight = FontWeight.Normal, color = Color.Black)
             Spacer(modifier = Modifier.height(4.dp))
-            Text("Masukkan ID User dan kata sandi akun anda.", fontSize = 13.sp, color = Color.Gray)
+            Text("Masukkan NIK anda.", fontSize = 13.sp, color = Color.Gray) // Teks NIK sesuai Figma
         }
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Field ID
         TextField(
             value = idUser.value, onValueChange = { idUser.value = it },
-            placeholder = { Text("ID User", color = Color.Gray) },
+            placeholder = { Text("Nomor Induk Kependudukan", color = Color.Gray) },
             leadingIcon = { Icon(painter = painterResource(id = R.drawable.ic_user), contentDescription = null, tint = Color.Gray, modifier = Modifier.size(20.dp)) },
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(12.dp),
@@ -62,7 +66,6 @@ fun LoginPetugasScreen(navController: NavController, kodeRs: String) {
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Field Password
         TextField(
             value = password.value, onValueChange = { password.value = it },
             placeholder = { Text("Password", color = Color.Gray) },
@@ -83,31 +86,32 @@ fun LoginPetugasScreen(navController: NavController, kodeRs: String) {
                 if (idUser.value.isEmpty() || password.value.isEmpty()) return@Button
                 isLoading.value = true
 
-                // LOGIKA AUTHENTICATION PATEN
-                db.collection("users").whereEqualTo("id_login", idUser.value).get().addOnSuccessListener { snaps ->
+                // LOGIKA AUTHENTICATION PASIEN
+                db.collection("data_pasien").whereEqualTo("nik", idUser.value).get().addOnSuccessListener { snaps ->
                     if (snaps.isEmpty) {
-                        // Cek apakah dia Pasien nyasar
-                        db.collection("data_pasien").whereEqualTo("nik", idUser.value).get().addOnSuccessListener { pSnaps ->
+                        // Cek apakah dia Nakes yang nyasar
+                        db.collection("users").whereEqualTo("id_login", idUser.value).get().addOnSuccessListener { uSnaps ->
                             isLoading.value = false
-                            Toast.makeText(context, "Akun Tidak Terdaftar Pada Rumah Sakit Ini", Toast.LENGTH_LONG).show()
+                            if(!uSnaps.isEmpty) {
+                                Toast.makeText(context, "Akun Tidak Terdaftar Pada Rumah Sakit Ini", Toast.LENGTH_LONG).show() // Nakes nyasar ke pasien
+                            } else {
+                                Toast.makeText(context, "NIK Pasien Tidak Terdaftar Pada Rumah Sakit Ini", Toast.LENGTH_LONG).show() // Gak ada sama sekali
+                            }
                         }
                     } else {
                         val doc = snaps.documents[0]
                         val dbKodeRs = doc.getString("kode_rs") ?: ""
-                        val dbRole = doc.getString("role") ?: ""
 
                         if (dbKodeRs != kodeRs) {
                             isLoading.value = false
-                            Toast.makeText(context, "Akun Tidak Terdaftar Pada Rumah Sakit Ini", Toast.LENGTH_LONG).show() // Prioritas 1
-                        } else if (dbRole != "petugas_medis") {
-                            isLoading.value = false
-                            Toast.makeText(context, "ID Tidak Terdaftar Pada Role Ini", Toast.LENGTH_LONG).show() // Prioritas 2
+                            Toast.makeText(context, "NIK Pasien Tidak Terdaftar Pada Rumah Sakit Ini", Toast.LENGTH_LONG).show() // Salah RS
                         } else {
-                            // Lolos semua, sikat Firebase Auth!
+                            // Lolos semua, login Firebase Auth (asumsi pake nik@kode_rs.com)
                             val emailLogin = "${idUser.value}@${kodeRs.lowercase()}.com"
                             auth.signInWithEmailAndPassword(emailLogin, password.value).addOnSuccessListener {
                                 isLoading.value = false
-                                navController.navigate("dashboard_petugas") { popUpTo(0) }
+                                // TODO: Navigate to dashboard_pasien
+                                Toast.makeText(context, "Login Pasien Berhasil", Toast.LENGTH_SHORT).show()
                             }.addOnFailureListener {
                                 isLoading.value = false
                                 Toast.makeText(context, "Password Salah!", Toast.LENGTH_SHORT).show()
@@ -126,5 +130,22 @@ fun LoginPetugasScreen(navController: NavController, kodeRs: String) {
         ) {
             Text(if (isLoading.value) "Memproses..." else "Masuk", color = Color.White, fontWeight = FontWeight.Bold)
         }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Teks Daftar Sekarang Sesuai Figma
+        Text(
+            text = buildAnnotatedString {
+                append("Belum mendaftar Pasien? ")
+                withStyle(style = SpanStyle(textDecoration = TextDecoration.Underline, color = Color.Black, fontWeight = FontWeight.Medium)) {
+                    append("Daftar Sekarang")
+                }
+            },
+            fontSize = 12.sp,
+            color = Color.Gray,
+            modifier = Modifier.clickable {
+                navController.navigate("register_pasien/$kodeRs")
+            }
+        )
     }
 }
