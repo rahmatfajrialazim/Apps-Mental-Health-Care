@@ -35,7 +35,7 @@ fun AppNavigation() {
 
         composable("register_pasien/{kode_rs}") { backStackEntry ->
             val kodeRs = backStackEntry.arguments?.getString("kode_rs") ?: ""
-            // RegisterPasienScreen(navController, kodeRs)
+            RegisterPasienScreen(navController, kodeRs)
         }
 
         composable("dashboard_petugas") { DashboardPetugasScreen(navController) }
@@ -53,9 +53,17 @@ fun AppNavigation() {
             DetailPasienDokterScreen(navController, riwayatId)
         }
 
-        // Taruh di AppNavigation lu bareng rute yang lain
         composable("dashboard_pasien") {
-            // Nanti kita isi kodingannya pas lu udah siap ngerjain Dashboard Pasien
+            DashboardPasienScreen(navController)
+        }
+
+        composable("form_screening") {
+            FormScreeningPasienScreen(navController)
+        }
+
+        composable("detail_riwayat_pasien/{riwayatId}") { backStackEntry ->
+            val riwayatId = backStackEntry.arguments?.getString("riwayatId") ?: ""
+            DetailRiwayatPasienScreen(navController, riwayatId)
         }
     }
 }
