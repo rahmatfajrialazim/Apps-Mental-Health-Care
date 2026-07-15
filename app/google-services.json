@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "221258504465",
+    "project_id": "database-mental-health-2523b",
+    "storage_bucket": "database-mental-health-2523b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:221258504465:android:363e43a17f39cf144854b0",
+        "android_client_info": {
+          "package_name": "com.rahmat.mentalhealthcare"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsK45MR-fJQT765QA3EFcdDqz9E_eIdJY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
