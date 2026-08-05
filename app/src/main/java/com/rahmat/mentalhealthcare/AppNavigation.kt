@@ -69,5 +69,10 @@ fun AppNavigation() {
             val riwayatId = backStackEntry.arguments?.getString("riwayatId") ?: ""
             DetailRiwayatPasienScreen(navController, riwayatId)
         }
+
+        composable("progres_pasien_screen/{idPasien}") { backStackEntry ->
+            val idPasien = backStackEntry.arguments?.getString("idPasien") ?: ""
+            ProgresPasienScreen(navController, idPasien)
+        }
     }
 }

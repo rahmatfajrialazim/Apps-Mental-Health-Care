@@ -13,12 +13,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.google.firebase.firestore.FirebaseFirestore
 
-// Model penampung data rumah sakit
+
 data class Hospital(
     val kode_rs: String = "",
     val nama_rs: String = ""
@@ -30,7 +31,6 @@ fun HospitalSelectionScreen(navController: NavController) {
     val hospitalList = remember { mutableStateOf<List<Hospital>>(emptyList()) }
     val isLoading = remember { mutableStateOf(true) }
 
-    // Mengambil data dari master_rumahsakit
     LaunchedEffect(Unit) {
         db.collection("master_rumahsakit").get()
             .addOnSuccessListener { result ->
@@ -73,7 +73,6 @@ fun HospitalSelectionScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 items(hospitalList.value) { hospital ->
-                    // Gradient Card (Biru muda ke putih)
                     val gradientBrush = Brush.verticalGradient(
                         colors = listOf(Color(0xFFC7F0FD), Color.White)
                     )
@@ -83,7 +82,6 @@ fun HospitalSelectionScreen(navController: NavController) {
                             .fillMaxWidth()
                             .height(120.dp)
                             .clickable {
-                                // BAWA KODE_RS KE HALAMAN ROLE BIAR LOGIKA MULTI-TENANT JALAN
                                 navController.navigate("role_selection/${hospital.kode_rs}")
                             },
                         shape = RoundedCornerShape(8.dp),

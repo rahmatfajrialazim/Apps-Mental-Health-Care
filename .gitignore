@@ -13,3 +13,10 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+oracleJdk-26/
+
+build/
+.gradle/
+
+oracleJdk-26/
